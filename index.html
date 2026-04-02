@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>XINEPS4 Relay</title>
+    <title>XINEPS4 Relay v1.0.1</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#050505">
@@ -12,7 +12,7 @@
     <style>
         :root {
             --bg-color: #050505;
-            --panel-bg: #111;
+            --panel-bg: #0d0d0d;
             --ps-blue: #3388ff;
             --ps-blue-dim: #002266;
             --danger: #ff2a2a;
@@ -30,131 +30,233 @@
             display: flex; flex-direction: column;
         }
 
-        /* --- RELAY HEADER --- */
+        /* --- HEADER (CENTERED BRANDING) --- */
         .header {
-            padding: 12px 15px; background: var(--panel-bg);
+            padding: 15px; background: var(--panel-bg);
             border-bottom: 1px solid var(--ps-blue-dim);
-            display: flex; justify-content: space-between; align-items: center;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
             z-index: 100;
         }
-        
-        .brand-line { font-weight: bold; color: var(--ps-blue); letter-spacing: 1px; font-size: 1rem; white-space: nowrap; }
-        .ver-tag { color: #ffffff; font-size: 0.6rem; opacity: 0.5; margin-left: 6px; }
-        
-        .status-matrix { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-        .status-row { display: flex; align-items: center; gap: 8px; font-size: 0.7rem; font-weight: bold; letter-spacing: 1px; }
-        .status-label { color: #888; }
-        .indicator { color: var(--danger); }
-        .indicator.active { color: var(--ps-blue); text-shadow: 0 0 8px var(--ps-blue); }
+        .brand-line { font-weight: bold; color: var(--ps-blue); letter-spacing: 2px; font-size: 1.2rem; }
+        .ver-tag { color: #888; font-size: 0.75rem; margin-top: 4px; letter-spacing: 1px; }
 
-        .btn-connect {
-            background: rgba(51, 136, 255, 0.1); color: var(--ps-blue);
-            border: 1px solid var(--ps-blue); padding: 4px 10px;
-            font-size: 0.65rem; text-transform: uppercase; cursor: pointer;
-            border-radius: 4px; margin-left: 5px;
-        }
-        .btn-connect:active { background: var(--ps-blue); color: #000; }
-
-        /* --- DIAGNOSTIC DASHBOARD --- */
+        /* --- MAIN DASHBOARD --- */
         .dashboard {
             flex: 1; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; gap: 30px;
-            padding: 20px; position: relative;
+            align-items: center; padding: 30px 20px; gap: 30px;
+            overflow-y: auto;
         }
 
-        .telemetry-hud {
-            background: #000; border: 1px solid var(--ps-blue-dim);
-            padding: 10px 25px; border-radius: 8px;
-            font-size: 1.5rem; font-weight: bold; color: var(--ps-blue);
-            text-align: center; box-shadow: 0 0 15px rgba(51,136,255,0.15);
-            letter-spacing: 2px;
+        /* --- TELEMETRY HUD --- */
+        .telemetry-panel {
+            width: 100%; max-width: 500px;
+            background: #080808; border: 1px solid var(--ps-blue-dim);
+            border-radius: 8px; padding: 15px 20px;
+            box-shadow: 0 0 20px rgba(51,136,255,0.05);
         }
-        .telemetry-hud.offline { color: #444; border-color: #222; box-shadow: none; }
-
-        /* VISUALIZER GRID */
-        .visualizer-layer {
-            display: flex; justify-content: space-between; align-items: center;
-            width: 100%; max-width: 600px; padding: 0 10%;
-        }
-
-        /* Left Analog Visualizer */
-        .stick-base {
-            width: 160px; height: 160px;
-            background: radial-gradient(circle, #1a1a1a 0%, #0a0a0a 100%);
-            border: 2px solid var(--ps-blue-dim); border-radius: 50%;
-            position: relative; box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
-        }
-        .stick-base::before, .stick-base::after { content: ''; position: absolute; background: rgba(51, 136, 255, 0.1); }
-        .stick-base::before { width: 1px; height: 100%; left: 50%; top: 0; }
-        .stick-base::after { height: 1px; width: 100%; top: 50%; left: 0; }
         
-        .stick-head {
-            width: 70px; height: 70px;
-            background: radial-gradient(circle, #444 0%, #222 100%);
-            border: 2px solid #555; border-radius: 50%;
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            box-shadow: 0 10px 15px rgba(0,0,0,0.8);
-            transition: transform 0.05s linear; /* Smooth ghosting */
-        }
-        .stick-head.active { border-color: var(--ps-blue); box-shadow: 0 0 20px rgba(51,136,255,0.4); }
+        .tel-header { color: #666; font-size: 0.7rem; border-bottom: 1px solid #222; padding-bottom: 5px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .tel-row { display: flex; justify-content: space-between; font-size: 1rem; margin-bottom: 8px; font-weight: bold; color: #aaa; }
+        .tel-value { color: var(--ps-blue); }
+        .tel-tx-row { border-top: 1px dashed #333; padding-top: 10px; margin-top: 5px; font-size: 1.2rem; color: #fff; }
+        .tel-tx-val { color: var(--accent); color: #00ffcc; text-shadow: 0 0 10px rgba(0,255,204,0.3); }
 
-        /* Right Action Visualizer */
-        .action-cluster {
-            position: relative; width: 160px; height: 160px;
+        /* --- STATUS CLUSTER --- */
+        .status-cluster {
+            display: flex; width: 100%; max-width: 500px; gap: 15px;
         }
-        .ds-btn {
-            width: 50px; height: 50px; border-radius: 50%;
-            background: #111; border: 2px solid #333;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 1.5rem; font-weight: bold; position: absolute;
-            box-shadow: 0 5px 10px rgba(0,0,0,0.5);
-            transition: all 0.1s;
+
+        .status-card {
+            flex: 1; background: var(--panel-bg);
+            border: 2px solid #222; border-radius: 12px;
+            padding: 20px 15px; display: flex; flex-direction: column;
+            align-items: center; justify-content: space-between;
+            transition: border-color 0.3s, box-shadow 0.3s;
         }
-        /* PS4 Layout Matching */
-        #visCross { bottom: 10px; left: 50%; transform: translateX(-50%); color: #7b94ff; }
-        #visCircle { top: 50%; right: 10px; transform: translateY(-50%); color: #ff6666; }
+        .status-card.active { border-color: var(--ps-blue); box-shadow: inset 0 0 20px rgba(51,136,255,0.1); }
         
-        .ds-btn.pressed { 
-            background: #222; border-color: var(--ps-blue);
-            box-shadow: 0 0 15px var(--ps-blue), inset 0 0 10px var(--ps-blue);
-            transform: scale(0.9) translate(var(--tx, -50%), var(--ty, -50%)); /* Scale while preserving position */
-        }
-        #visCross.pressed { --tx: -50%; --ty: 0; }
-        #visCircle.pressed { --tx: 0; --ty: -50%; }
+        .card-title { font-size: 0.8rem; color: #888; letter-spacing: 1px; margin-bottom: 15px; text-align: center; }
+        .card-indicator { font-size: 1.1rem; font-weight: bold; color: var(--danger); margin-bottom: 15px; text-align: center; }
+        .status-card.active .card-indicator { color: var(--ps-blue); text-shadow: 0 0 10px rgba(51,136,255,0.5); }
 
+        .btn-action {
+            width: 100%; background: rgba(51, 136, 255, 0.1);
+            color: var(--ps-blue); border: 1px solid var(--ps-blue);
+            padding: 12px 0; border-radius: 6px; font-size: 0.9rem;
+            font-weight: bold; text-transform: uppercase; cursor: pointer;
+        }
+        .btn-action:active { background: var(--ps-blue); color: #000; }
+
+        @media (orientation: landscape) {
+            .dashboard { flex-direction: row; justify-content: center; align-items: flex-start; }
+            .telemetry-panel { flex: 1.2; margin-top: 20px; }
+            .status-cluster { flex: 1; flex-direction: column; margin-top: 20px; }
+        }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="brand-line">XINEPS4 BY TJ <span class="ver-tag">v1.0.0</span></div>
-        <div class="status-matrix">
-            <div class="status-row">
-                <span class="status-label">DUALSHOCK:</span> 
-                <span id="dsStatus" class="indicator">AWAITING</span>
-            </div>
-            <div class="status-row">
-                <span class="status-label">MICRO:BIT:</span> 
-                <span id="botStatus" class="indicator">OFFLINE</span>
-                <button class="btn-connect" id="btnConnect">LINK</button>
-            </div>
-        </div>
+        <div class="brand-line">XINEPS4 BY TJ</div>
+        <div class="ver-tag">v1.0.1</div>
     </div>
 
     <div class="dashboard">
-        <div class="telemetry-hud offline" id="telemetryOut">TX: AWAITING</div>
         
-        <div class="visualizer-layer">
-            <div class="stick-base">
-                <div class="stick-head" id="visStick"></div>
+        <div class="telemetry-panel">
+            <div class="tel-header">DualShock Raw Input</div>
+            <div class="tel-row">
+                <span>AXIS-X:</span><span class="tel-value" id="psX">0.00</span>
+            </div>
+            <div class="tel-row">
+                <span>AXIS-Y:</span><span class="tel-value" id="psY">0.00</span>
+            </div>
+            <div class="tel-row">
+                <span>[✕] CROSS:</span><span class="tel-value" id="psCross">OFF</span>
+            </div>
+            <div class="tel-row">
+                <span>[◯] CIRCLE:</span><span class="tel-value" id="psCircle">OFF</span>
             </div>
 
-            <div class="action-cluster">
-                <div class="ds-btn" id="visCircle">◯</div>
-                <div class="ds-btn" id="visCross">✕</div>
+            <div class="tel-header" style="margin-top: 15px;">Micro:bit Payload</div>
+            <div class="tel-row tel-tx-row">
+                <span>TX:</span><span class="tel-tx-val" id="telemetryOut">AWAITING</span>
             </div>
         </div>
+
+        <div class="status-cluster">
+            
+            <div class="status-card" id="dsCard">
+                <div class="card-title">DUALSHOCK 4</div>
+                <div class="card-indicator" id="dsStatus">AWAITING PAIR</div>
+                <div style="font-size:0.6rem; color:#555; text-align:center;">Press PS Button</div>
+            </div>
+
+            <div class="status-card" id="botCard">
+                <div class="card-title">MICRO:BIT CHASSIS</div>
+                <div class="card-indicator" id="botStatus">OFFLINE</div>
+                <button class="btn-action" id="btnConnect">LINK BLE</button>
+            </div>
+
+        </div>
+
     </div>
 
     <script>
+        // --- PWA REGISTRATION ---
+        if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+
+        // --- BLE CORE (MICRO:BIT PROTOCOL) ---
+        const UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+        const UART_RX_CHARACTERISTIC_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+        let bleDevice, rxChar;
+        let cX = 0, cY = 0, lX, lY;
+
+        const botCard = document.getElementById('botCard');
+        const botStatusEl = document.getElementById('botStatus');
+        const telEl = document.getElementById('telemetryOut');
+        const connBtn = document.getElementById('btnConnect');
+
+        connBtn.addEventListener('click', async () => {
+            if (bleDevice?.gatt.connected) { bleDevice.gatt.disconnect(); return; }
+            try {
+                bleDevice = await navigator.bluetooth.requestDevice({
+                    filters: [{ namePrefix: "BBC" }, { namePrefix: "micro:bit" }],
+                    optionalServices: [UART_SERVICE_UUID]
+                });
+                const server = await bleDevice.gatt.connect();
+                const service = await server.getPrimaryService(UART_SERVICE_UUID);
+                rxChar = await service.getCharacteristic(UART_RX_CHARACTERISTIC_UUID);
+                
+                botStatusEl.innerText = "LINK ESTABLISHED"; botCard.classList.add('active');
+                connBtn.innerText = "SEVER CONNECTION";
+                await send("mode_analog\n");
+            } catch (e) { console.error("BLE Error:", e); }
+        });
+
+        bleDevice?.addEventListener('gattserverdisconnected', () => {
+            botStatusEl.innerText = "OFFLINE"; botCard.classList.remove('active');
+            connBtn.innerText = "LINK BLE"; telEl.innerText = "SEVERED";
+            rxChar = null;
+        });
+
+        async function send(s) {
+            telEl.innerText = `${s.replace('\n','')}`;
+            if (!rxChar) return;
+            try { await rxChar.writeValue(new TextEncoder().encode(s)); } catch (e) {}
+        }
+
+        const fFormat = (v) => (v>=0?'+':'-') + Math.abs(v).toString().padStart(2,'0');
+        function forceKineticUpdate() {
+            if (cX !== lX || cY !== lY) {
+                send(`X${fFormat(cX)},Y${fFormat(cY)}\n`);
+                lX = cX; lY = cY;
+            }
+        }
+
+        // --- GAMEPAD API (DUALSHOCK BRIDGE) ---
+        const dsCard = document.getElementById('dsCard');
+        const dsStatusEl = document.getElementById('dsStatus');
+        
+        // Telemetry UI Elements
+        const outPsX = document.getElementById('psX');
+        const outPsY = document.getElementById('psY');
+        const outPsCross = document.getElementById('psCross');
+        const outPsCircle = document.getElementById('psCircle');
+
+        let gpState = { cross: false, circle: false };
+        const GP_DEADZONE = 0.15;
+
+        window.addEventListener("gamepadconnected", (e) => {
+            dsStatusEl.innerText = "DS4 ACQUIRED"; dsCard.classList.add('active');
+        });
+
+        window.addEventListener("gamepaddisconnected", (e) => {
+            dsStatusEl.innerText = "AWAITING PAIR"; dsCard.classList.remove('active');
+            outPsX.innerText = "0.00"; outPsY.innerText = "0.00";
+            outPsCross.innerText = "OFF"; outPsCircle.innerText = "OFF";
+            cX = 0; cY = 0; forceKineticUpdate();
+        });
+
+        function pollGamepad() {
+            const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+            const gp = gamepads[0]; 
+            
+            if (gp) {
+                // Read Left Analog Stick (Axes 0 and 1)
+                let ax = gp.axes[0]; 
+                let ay = gp.axes[1]; 
+                
+                // Update Raw Telemetry Display
+                outPsX.innerText = ax.toFixed(2);
+                outPsY.innerText = ay.toFixed(2);
+
+                if (Math.abs(ax) < GP_DEADZONE) ax = 0;
+                if (Math.abs(ay) < GP_DEADZONE) ay = 0;
+
+                // Map to -90 / +90 format for Micro:bit
+                cX = Math.round(ax * 90);
+                cY = Math.round(-ay * 90); // Invert Y-axis
+
+                // PS4 Cross (Button 0) -> Maps to 'A'
+                if (gp.buttons[0] && gp.buttons[0].pressed && !gpState.cross) {
+                    gpState.cross = true; outPsCross.innerText = "ON"; outPsCross.style.color = "#fff"; send("A\n"); 
+                } else if (gp.buttons[0] && !gp.buttons[0].pressed && gpState.cross) {
+                    gpState.cross = false; outPsCross.innerText = "OFF"; outPsCross.style.color = "var(--ps-blue)"; send("a\n");
+                }
+
+                // PS4 Circle (Button 1) -> Maps to 'B'
+                if (gp.buttons[1] && gp.buttons[1].pressed && !gpState.circle) {
+                    gpState.circle = true; outPsCircle.innerText = "ON"; outPsCircle.style.color = "#fff"; send("B\n"); 
+                } else if (gp.buttons[1] && !gp.buttons[1].pressed && gpState.circle) {
+                    gpState.circle = false; outPsCircle.innerText = "OFF"; outPsCircle.style.color = "var(--ps-blue)"; send("b\n");
+                }
+            }
+            requestAnimationFrame(pollGamepad);
+        }
+        pollGamepad(); // Initiate 60fps hardware polling loop
+
+        setInterval(forceKineticUpdate, 50); // Fallback heartbeat loop
+    </script>
+</body>
+</html>
