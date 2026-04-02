@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>XINEPS4 Relay v1.0.2</title>
+    <title>XINEPS4 Relay v1.0.4</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#050505">
@@ -98,34 +98,20 @@
 
     <div class="header">
         <div class="brand-line">XINEPS4 BY TJ</div>
-        <div class="ver-tag">v1.0.2</div>
+        <div class="ver-tag">v1.0.4</div>
     </div>
 
     <div class="dashboard">
         
         <div class="telemetry-panel">
             <div class="tel-header">DualShock Raw Input</div>
-            <div class="tel-row">
-                <span>AXIS-X:</span><span class="tel-value" id="psX">0.00</span>
-            </div>
-            <div class="tel-row">
-                <span>AXIS-Y:</span><span class="tel-value" id="psY">0.00</span>
-            </div>
-            <div class="tel-row">
-                <span>D-PAD:</span><span class="tel-value" id="psDpad">IDLE</span>
-            </div>
-            <div class="tel-row">
-                <span>[✕] CROSS (A):</span><span class="tel-value" id="psCross">OFF</span>
-            </div>
-            <div class="tel-row">
-                <span>[◯] CIRCLE (B):</span><span class="tel-value" id="psCircle">OFF</span>
-            </div>
-            <div class="tel-row">
-                <span>[□] SQUARE (C):</span><span class="tel-value" id="psSquare">OFF</span>
-            </div>
-            <div class="tel-row">
-                <span>[△] TRIANGLE (D):</span><span class="tel-value" id="psTriangle">OFF</span>
-            </div>
+            <div class="tel-row"><span>AXIS-X:</span><span class="tel-value" id="psX">0.00</span></div>
+            <div class="tel-row"><span>AXIS-Y:</span><span class="tel-value" id="psY">0.00</span></div>
+            <div class="tel-row"><span>D-PAD:</span><span class="tel-value" id="psDpad">IDLE</span></div>
+            <div class="tel-row"><span>[✕] CROSS (A):</span><span class="tel-value" id="psCross">OFF</span></div>
+            <div class="tel-row"><span>[◯] CIRCLE (B):</span><span class="tel-value" id="psCircle">OFF</span></div>
+            <div class="tel-row"><span>[□] SQUARE (C):</span><span class="tel-value" id="psSquare">OFF</span></div>
+            <div class="tel-row"><span>[△] TRIANGLE (D):</span><span class="tel-value" id="psTriangle">OFF</span></div>
 
             <div class="tel-header" style="margin-top: 15px;">Micro:bit Payload</div>
             <div class="tel-row tel-tx-row">
@@ -134,7 +120,6 @@
         </div>
 
         <div class="status-cluster">
-            
             <div class="status-card" id="dsCard">
                 <div class="card-title">DUALSHOCK 4</div>
                 <div class="card-indicator" id="dsStatus">AWAITING PAIR</div>
@@ -146,14 +131,15 @@
                 <div class="card-indicator" id="botStatus">OFFLINE</div>
                 <button class="btn-action" id="btnConnect">LINK BLE</button>
             </div>
-
         </div>
 
     </div>
 
     <script>
         // --- PWA REGISTRATION ---
-        if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+        }
 
         // --- BLE CORE (MICRO:BIT PROTOCOL) ---
         const UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
@@ -207,7 +193,6 @@
         const dsCard = document.getElementById('dsCard');
         const dsStatusEl = document.getElementById('dsStatus');
         
-        // Telemetry UI Elements
         const outPsX = document.getElementById('psX');
         const outPsY = document.getElementById('psY');
         const outPsDpad = document.getElementById('psDpad');
@@ -236,27 +221,56 @@
             const gp = gamepads[0]; 
             
             if (gp) {
-                // Read Left Analog Stick (Axes 0 and 1)
                 let ax = gp.axes[0]; 
                 let ay = gp.axes[1]; 
                 
-                outPsX.innerText = ax.toFixed(2);
-                outPsY.innerText = ay.toFixed(2);
+                outPsX.innerText = ax.toFixed(2); outPsY.innerText = ay.toFixed(2);
 
                 if (Math.abs(ax) < GP_DEADZONE) ax = 0;
                 if (Math.abs(ay) < GP_DEADZONE) ay = 0;
 
-                // D-Pad Polling (Buttons 12-15)
-                let dpadActive = false;
-                let dpX = 0;
-                let dpY = 0;
+                let dpadActive = false; let dpX = 0; let dpY = 0;
+                if (gp.buttons[12] && gp.buttons[12].pressed) { dpY = 90; dpadActive = true; } 
+                if (gp.buttons[13] && gp.buttons[13].pressed) { dpY = -90; dpadActive = true; } 
+                if (gp.buttons[14] && gp.buttons[14].pressed) { dpX = -90; dpadActive = true; } 
+                if (gp.buttons[15] && gp.buttons[15].pressed) { dpX = 90; dpadActive = true; }  
 
-                if (gp.buttons[12] && gp.buttons[12].pressed) { dpY = 90; dpadActive = true; }  // UP
-                if (gp.buttons[13] && gp.buttons[13].pressed) { dpY = -90; dpadActive = true; } // DOWN
-                if (gp.buttons[14] && gp.buttons[14].pressed) { dpX = -90; dpadActive = true; } // LEFT
-                if (gp.buttons[15] && gp.buttons[15].pressed) { dpX = 90; dpadActive = true; }  // RIGHT
-
-                // Coordinate Injection Override Matrix
                 if (dpadActive) {
-                    cX = dpX; cY = dpY;
-                    outPsDpad.innerText = "ACTIVE"; outPs
+                    cX = dpX; cY = dpY; outPsDpad.innerText = "ACTIVE"; outPsDpad.style.color = "#fff";
+                } else {
+                    cX = Math.round(ax * 90); cY = Math.round(-ay * 90);
+                    outPsDpad.innerText = "IDLE"; outPsDpad.style.color = "var(--ps-blue)";
+                }
+
+                if (gp.buttons[0] && gp.buttons[0].pressed && !gpState.cross) {
+                    gpState.cross = true; outPsCross.innerText = "ON"; outPsCross.style.color = "#fff"; send("A\n"); 
+                } else if (gp.buttons[0] && !gp.buttons[0].pressed && gpState.cross) {
+                    gpState.cross = false; outPsCross.innerText = "OFF"; outPsCross.style.color = "var(--ps-blue)"; send("a\n");
+                }
+
+                if (gp.buttons[1] && gp.buttons[1].pressed && !gpState.circle) {
+                    gpState.circle = true; outPsCircle.innerText = "ON"; outPsCircle.style.color = "#fff"; send("B\n"); 
+                } else if (gp.buttons[1] && !gp.buttons[1].pressed && gpState.circle) {
+                    gpState.circle = false; outPsCircle.innerText = "OFF"; outPsCircle.style.color = "var(--ps-blue)"; send("b\n");
+                }
+
+                if (gp.buttons[2] && gp.buttons[2].pressed && !gpState.square) {
+                    gpState.square = true; outPsSquare.innerText = "ON"; outPsSquare.style.color = "#fff"; send("C\n"); 
+                } else if (gp.buttons[2] && !gp.buttons[2].pressed && gpState.square) {
+                    gpState.square = false; outPsSquare.innerText = "OFF"; outPsSquare.style.color = "var(--ps-blue)"; send("c\n");
+                }
+
+                if (gp.buttons[3] && gp.buttons[3].pressed && !gpState.triangle) {
+                    gpState.triangle = true; outPsTriangle.innerText = "ON"; outPsTriangle.style.color = "#fff"; send("D\n"); 
+                } else if (gp.buttons[3] && !gp.buttons[3].pressed && gpState.triangle) {
+                    gpState.triangle = false; outPsTriangle.innerText = "OFF"; outPsTriangle.style.color = "var(--ps-blue)"; send("d\n");
+                }
+            }
+            requestAnimationFrame(pollGamepad);
+        }
+        pollGamepad(); 
+
+        setInterval(forceKineticUpdate, 50); 
+    </script>
+</body>
+</html>
