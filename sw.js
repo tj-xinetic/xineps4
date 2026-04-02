@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xineps4-v1.0.1';
+const CACHE_NAME = 'xineps4-v1.0.2';
 const ASSETS = ['./', './index.html', './manifest.json', './icon.png'];
 
 self.addEventListener('install', (e) => {
