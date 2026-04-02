@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>XINEPS4 Relay</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#050505">
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <style>
+        :root {
+            --bg-color: #050505;
+            --panel-bg: #111;
+            --ps-blue: #3388ff;
+            --ps-blue-dim: #002266;
+            --danger: #ff2a2a;
+            --text-main: #e0e0e0;
+        }
+
+        * { box-sizing: border-box; font-family: 'Courier New', Courier, monospace; user-select: none; -webkit-user-select: none; }
+
+        html, body {
+            margin: 0; padding: 0;
+            width: 100%; height: 100dvh;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+            display: flex; flex-direction: column;
+        }
+
+        /* --- RELAY HEADER --- */
+        .header {
+            padding: 12px 15px; background: var(--panel-bg);
+            border-bottom: 1px solid var(--ps-blue-dim);
+            display: flex; justify-content: space-between; align-items: center;
+            z-index: 100;
+        }
+        
+        .brand-line { font-weight: bold; color: var(--ps-blue); letter-spacing: 1px; font-size: 1rem; white-space: nowrap; }
+        .ver-tag { color: #ffffff; font-size: 0.6rem; opacity: 0.5; margin-left: 6px; }
+        
+        .status-matrix { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+        .status-row { display: flex; align-items: center; gap: 8px; font-size: 0.7rem; font-weight: bold; letter-spacing: 1px; }
+        .status-label { color: #888; }
+        .indicator { color: var(--danger); }
+        .indicator.active { color: var(--ps-blue); text-shadow: 0 0 8px var(--ps-blue); }
+
+        .btn-connect {
+            background: rgba(51, 136, 255, 0.1); color: var(--ps-blue);
+            border: 1px solid var(--ps-blue); padding: 4px 10px;
+            font-size: 0.65rem; text-transform: uppercase; cursor: pointer;
+            border-radius: 4px; margin-left: 5px;
+        }
+        .btn-connect:active { background: var(--ps-blue); color: #000; }
+
+        /* --- DIAGNOSTIC DASHBOARD --- */
+        .dashboard {
+            flex: 1; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; gap: 30px;
+            padding: 20px; position: relative;
+        }
+
+        .telemetry-hud {
+            background: #000; border: 1px solid var(--ps-blue-dim);
+            padding: 10px 25px; border-radius: 8px;
+            font-size: 1.5rem; font-weight: bold; color: var(--ps-blue);
+            text-align: center; box-shadow: 0 0 15px rgba(51,136,255,0.15);
+            letter-spacing: 2px;
+        }
+        .telemetry-hud.offline { color: #444; border-color: #222; box-shadow: none; }
+
+        /* VISUALIZER GRID */
+        .visualizer-layer {
+            display: flex; justify-content: space-between; align-items: center;
+            width: 100%; max-width: 600px; padding: 0 10%;
+        }
+
+        /* Left Analog Visualizer */
+        .stick-base {
+            width: 160px; height: 160px;
+            background: radial-gradient(circle, #1a1a1a 0%, #0a0a0a 100%);
+            border: 2px solid var(--ps-blue-dim); border-radius: 50%;
+            position: relative; box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+        .stick-base::before, .stick-base::after { content: ''; position: absolute; background: rgba(51, 136, 255, 0.1); }
+        .stick-base::before { width: 1px; height: 100%; left: 50%; top: 0; }
+        .stick-base::after { height: 1px; width: 100%; top: 50%; left: 0; }
+        
+        .stick-head {
+            width: 70px; height: 70px;
+            background: radial-gradient(circle, #444 0%, #222 100%);
+            border: 2px solid #555; border-radius: 50%;
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 10px 15px rgba(0,0,0,0.8);
+            transition: transform 0.05s linear; /* Smooth ghosting */
+        }
+        .stick-head.active { border-color: var(--ps-blue); box-shadow: 0 0 20px rgba(51,136,255,0.4); }
+
+        /* Right Action Visualizer */
+        .action-cluster {
+            position: relative; width: 160px; height: 160px;
+        }
+        .ds-btn {
+            width: 50px; height: 50px; border-radius: 50%;
+            background: #111; border: 2px solid #333;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 1.5rem; font-weight: bold; position: absolute;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.5);
+            transition: all 0.1s;
+        }
+        /* PS4 Layout Matching */
+        #visCross { bottom: 10px; left: 50%; transform: translateX(-50%); color: #7b94ff; }
+        #visCircle { top: 50%; right: 10px; transform: translateY(-50%); color: #ff6666; }
+        
+        .ds-btn.pressed { 
+            background: #222; border-color: var(--ps-blue);
+            box-shadow: 0 0 15px var(--ps-blue), inset 0 0 10px var(--ps-blue);
+            transform: scale(0.9) translate(var(--tx, -50%), var(--ty, -50%)); /* Scale while preserving position */
+        }
+        #visCross.pressed { --tx: -50%; --ty: 0; }
+        #visCircle.pressed { --tx: 0; --ty: -50%; }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="brand-line">XINEPS4 BY TJ <span class="ver-tag">v1.0.0</span></div>
+        <div class="status-matrix">
+            <div class="status-row">
+                <span class="status-label">DUALSHOCK:</span> 
+                <span id="dsStatus" class="indicator">AWAITING</span>
+            </div>
+            <div class="status-row">
+                <span class="status-label">MICRO:BIT:</span> 
+                <span id="botStatus" class="indicator">OFFLINE</span>
+                <button class="btn-connect" id="btnConnect">LINK</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <div class="telemetry-hud offline" id="telemetryOut">TX: AWAITING</div>
+        
+        <div class="visualizer-layer">
+            <div class="stick-base">
+                <div class="stick-head" id="visStick"></div>
+            </div>
+
+            <div class="action-cluster">
+                <div class="ds-btn" id="visCircle">◯</div>
+                <div class="ds-btn" id="visCross">✕</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
